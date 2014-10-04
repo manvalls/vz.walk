@@ -15,7 +15,7 @@ var walk = require('vz.walk'),
 
 walk(function*(){
   if(yield exists('foo.bar')) console.log('foo.bar exists!');
-  else console.log('foo.bar doesn't exist');
+  else console.log('foo.bar doesn\'t exist');
 });
 
 ```
