@@ -1,5 +1,8 @@
 
 var Property = require('vz.property'),
+    Yielded = require('vz.yielded'),
+    
+    yielded = new Property(),
     generators = new Property();
 
 function initialize(yd,gen){
@@ -9,22 +12,27 @@ function initialize(yd,gen){
   else generators.set(yd,[gen]);
 }
 
-function pop(gen,value){
+function pop(gen,value,error){
   var ret;
   
-  if(value !== undefined) ret = gen.next(value);
+  if(error) ret = gen.throw(error);
+  else if(value !== undefined) ret = gen.next(value);
   else ret = gen.next();
   
   return ret;
 }
 
-function squeeze(gen,value){
+function squeeze(gen,value,error){
   var yd,ret;
   
   while(true){
-    ret = pop(gen,value);
+    ret = pop(gen,value,error);
     
-    if(ret.done) return;
+    if(ret.done){
+      yielded.get(gen).value = ret.value;
+      return;
+    }
+    
     yd = ret.value;
     
     if(!yd.done){
@@ -34,8 +42,8 @@ function squeeze(gen,value){
       return;
     }
     
-    if(yd.error) gen.throw(yd.error);
-    else value = yd.value;
+    error = yd.error;
+    value = yd.value;
   }
   
 }
@@ -44,11 +52,16 @@ function onDone(){
   var gens = generators.get(this),
       gen;
   
-  if(this.error) while(gen = gens.shift()) gen.throw(this.error);
-  else while(gen = gens.shift()) squeeze(gen,this.value);
+  while(gen = gens.shift()) squeeze(gen,this.value,this.error);
 }
 
 module.exports = function(Generator,args,thisArg){
-  squeeze(Generator.apply(thisArg || this,args || []));
+  var gen = Generator.apply(thisArg || this,args || []),
+      yd = new Yielded();
+  
+  yielded.set(gen,yd);
+  squeeze(gen);
+  
+  return yd;
 };
 
