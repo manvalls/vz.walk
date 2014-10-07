@@ -26,7 +26,11 @@ function squeeze(gen,value,error){
   var yd,ret;
   
   while(true){
-    ret = pop(gen,value,error);
+    try{ ret = pop(gen,value,error); }
+    catch(e){
+      yielded.get(gen).error = e;
+      return;
+    }
     
     if(ret.done){
       yielded.get(gen).value = ret.value;
