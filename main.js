@@ -69,3 +69,6 @@ module.exports = function(Generator,args,thisArg){
   return yd;
 };
 
+try{ eval('function* __test(){}'); }
+catch(e){ console.warn('Your engine doesn\'t seem to support "function*", try setting the harmony flag or using a tool like regenerator'); }
+
