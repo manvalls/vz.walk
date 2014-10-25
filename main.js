@@ -3,13 +3,10 @@ var Property = require('vz.property'),
     Yielded = require('vz.yielded'),
     
     yielded = new Property(),
-    generators = new Property();
+    generator = new Property();
 
 function initialize(yd,gen){
-  var gens = generators.get(yd);
-  
-  if(gens) gens.push(gen);
-  else generators.set(yd,[gen]);
+  generator.set(yd,gen);
 }
 
 function pop(gen,value,error){
@@ -22,12 +19,14 @@ function pop(gen,value,error){
   return ret;
 }
 
-function squeeze(gen,value,error){
-  var yd,ret;
+function squeeze(gen,value,error,yd){
+  var ret;
   
   while(true){
-    try{ ret = pop(gen,value,error); }
-    catch(e){
+    try{
+      ret = pop(gen,value,error);
+      if(yd) yd.consumed = true;
+    }catch(e){
       yielded.get(gen).error = e;
       return;
     }
@@ -53,10 +52,7 @@ function squeeze(gen,value,error){
 }
 
 function onDone(){
-  var gens = generators.get(this),
-      gen;
-  
-  while(gen = gens.shift()) squeeze(gen,this.value,this.error);
+  squeeze(generator.get(this),this.value,this.error,this);
 }
 
 module.exports = function(Generator,args,thisArg){
