@@ -6,6 +6,7 @@ var Property = require('vz.property'),
     generator = new Property();
 
 function initialize(yd,gen){
+  if(generator.get(yd,gen)) throw 'Yieldeds can only have one consumer at a time';
   generator.set(yd,gen);
 }
 
