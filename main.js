@@ -1,14 +1,5 @@
 
-var Property = require('vz.property'),
-    Yielded = require('vz.yielded'),
-    
-    yielded = new Property(),
-    generator = new Property();
-
-function initialize(yd,gen){
-  if(generator.get(yd,gen)) throw 'Yieldeds can only have one consumer at a time';
-  generator.set(yd,gen);
-}
+var Yielded = require('vz.yielded');
 
 function pop(gen,value,error){
   var ret;
@@ -20,7 +11,7 @@ function pop(gen,value,error){
   return ret;
 }
 
-function squeeze(gen,value,error,yd){
+function squeeze(yielded,gen,value,error,yd){
   var ret;
   
   while(true){
@@ -28,20 +19,22 @@ function squeeze(gen,value,error,yd){
       ret = pop(gen,value,error);
       if(yd) yd.consumed = true;
     }catch(e){
-      yielded.get(gen).error = e;
+      yielded.error = e;
+      if(yd) yd.consumed = true;
       return;
     }
     
     if(ret.done){
-      yielded.get(gen).value = ret.value;
+      yielded.value = ret.value;
       return;
     }
     
     yd = Yielded.get(ret.value);
     
     if(!yd.done){
-      initialize(yd,gen);
-      yd.on('done',onDone);
+      yd.on('done',function(){
+        squeeze(yielded,gen,this.value,this.error,this);
+      });
       
       return;
     }
@@ -52,16 +45,11 @@ function squeeze(gen,value,error,yd){
   
 }
 
-function onDone(){
-  squeeze(generator.get(this),this.value,this.error,this);
-}
-
 module.exports = function(Generator,args,thisArg){
   var gen = Generator.apply(thisArg || this,args || []),
       yd = new Yielded();
   
-  yielded.set(gen,yd);
-  squeeze(gen);
+  squeeze(yd,gen);
   
   return yd;
 };
