@@ -1,22 +1,22 @@
 
 var Yielded = require('vz.yielded');
 
-function pop(gen,value,error){
+function pop(it,value,error){
   var ret;
   
-  if(error) ret = gen.throw(error);
-  else if(value !== undefined) ret = gen.next(value);
-  else ret = gen.next();
+  if(error) ret = it.throw(error);
+  else if(value !== undefined) ret = it.next(value);
+  else ret = it.next();
   
   return ret;
 }
 
-function squeeze(yielded,gen,value,error,yd){
+function squeeze(yielded,it,value,error,yd){
   var ret;
   
   while(true){
     try{
-      ret = pop(gen,value,error);
+      ret = pop(it,value,error);
       if(yd) yd.consumed = true;
     }catch(e){
       yielded.error = e;
@@ -33,7 +33,7 @@ function squeeze(yielded,gen,value,error,yd){
     
     if(!yd.done){
       yd.on('done',function(){
-        squeeze(yielded,gen,this.value,this.error,this);
+        squeeze(yielded,it,this.value,this.error,this);
       });
       
       return;
@@ -46,10 +46,13 @@ function squeeze(yielded,gen,value,error,yd){
 }
 
 module.exports = function(Generator,args,thisArg){
-  var gen = Generator.apply(thisArg || this,args || []),
-      yd = new Yielded();
+  var it = Generator.apply(thisArg || this,args || []),
+      yd;
   
-  squeeze(yd,gen);
+  if(!(it && it.next && it.throw)) return it;
+  
+  yd = new Yielded();
+  squeeze(yd,it);
   
   return yd;
 };
