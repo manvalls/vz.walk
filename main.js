@@ -1,5 +1,5 @@
 
-var Yielded = require('vz.yielded');
+var Yielded;
 
 function pop(it,value,error){
   var ret;
@@ -45,7 +45,7 @@ function squeeze(yielded,it,value,error,yd){
   
 }
 
-module.exports = function(Generator,args,thisArg){
+module.exports = function walk(Generator,args,thisArg){
   var it = Generator.apply(thisArg || this,args || []),
       yd;
   
@@ -57,3 +57,4 @@ module.exports = function(Generator,args,thisArg){
   return yd;
 };
 
+Yielded = require('vz.yielded');
