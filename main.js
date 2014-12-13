@@ -46,10 +46,13 @@ function squeeze(yielded,it,value,error,yd){
 }
 
 module.exports = function walk(Generator,args,thisArg){
-  var it = Generator.apply(thisArg || this,args || []),
+  var it,
       yd;
   
-  if(!(it && it.next && it.throw)) return it;
+  try{ it = Generator.apply(thisArg || this,args || []); }
+  catch(e){ return Yielded.reject(e); }
+  
+  if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
   yd = new Yielded();
   squeeze(yd,it);
