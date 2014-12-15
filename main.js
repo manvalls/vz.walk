@@ -1,5 +1,6 @@
 
-var Yielded;
+var Yielded,
+    walk;
 
 function pop(it,value,error){
   var ret;
@@ -45,7 +46,7 @@ function squeeze(yielded,it,value,error,yd){
   
 }
 
-module.exports = function walk(Generator,args,thisArg){
+module.exports = walk = function walk(Generator,args,thisArg){
   var it,
       yd;
   
@@ -58,6 +59,12 @@ module.exports = function walk(Generator,args,thisArg){
   squeeze(yd,it);
   
   return yd;
+};
+
+module.exports.wrap = function(gen){
+  return function(){
+    return walk(gen,arguments,this);
+  };
 };
 
 Yielded = require('vz.yielded');
