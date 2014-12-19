@@ -1,6 +1,7 @@
 
 var Yielded,
-    walk;
+    walk,
+    current = null;
 
 function pop(it,value,error){
   var ret;
@@ -12,56 +13,77 @@ function pop(it,value,error){
   return ret;
 }
 
-function squeeze(yielded,it,value,error,yd){
+function squeeze(opt){
   var ret;
   
   while(true){
     try{
-      ret = pop(it,value,error);
-      if(yd) yd.consumed = true;
+      current = opt.id;
+      ret = pop(opt.it,opt.value,opt.error);
+      if(opt.yd) opt.yd.consumed = true;
     }catch(e){
-      yielded.error = e;
-      if(yd) yd.consumed = true;
+      current = null;
+      opt.yielded.error = e;
+      if(opt.yd) opt.yd.consumed = true;
       return;
     }
     
     if(ret.done){
-      yielded.value = ret.value;
+      opt.yielded.value = ret.value;
       return;
     }
     
-    yd = Yielded.get(ret.value);
+    opt.yd = Yielded.get(ret.value);
     
-    if(!yd.done){
-      yd.on('done',function(){
-        squeeze(yielded,it,this.value,this.error,this);
-      });
-      
+    if(!opt.yd.done){
+      opt.yd.on('done',onDone,opt);
       return;
     }
     
-    error = yd.error;
-    value = yd.value;
+    opt.error = opt.yd.error;
+    opt.value = opt.yd.value;
   }
   
 }
 
-module.exports = walk = function walk(Generator,args,thisArg){
+function onDone(e,opt){
+  opt.value = this.value;
+  opt.error = this.error;
+  opt.yd = this;
+  
+  squeeze(opt);
+}
+
+module.exports = walk = function walk(Generator,args,thisArg,id){
   var it,
       yd;
   
-  try{ it = Generator.apply(thisArg || this,args || []); }
-  catch(e){ return Yielded.reject(e); }
+  try{
+    current = id;
+    it = Generator.apply(thisArg || this,args || []);
+    current = null;
+  }catch(e){
+    current = null;
+    return Yielded.reject(e);
+  }
   
   if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
   yd = new Yielded();
-  squeeze(yd,it);
+  
+  squeeze({ yielded: yd,
+            it: it,
+            id: id
+          });
   
   return yd;
 };
 
-module.exports.wrap = function(gen){
+Object.defineProperty(walk,'current',{get: function(){
+  return current;
+}});
+
+walk.wrap = function(gen){
   return function(){
     return walk(gen,arguments,this);
   };
