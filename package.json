@@ -4,7 +4,8 @@
   "description": "Walks a Generator following the iterator protocol",
   "main": "main.js",
   "dependencies": {
-    "vz.yielded": ""
+    "vz.yielded": "",
+    "vz.constants": ""
   },
   "repository": {
     "type": "git",

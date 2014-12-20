@@ -1,7 +1,6 @@
-
 var Yielded,
-    walk,
-    current = null;
+    c = require('vz.constants'),
+    walk;
 
 function pop(it,value,error){
   var ret;
@@ -17,12 +16,14 @@ function squeeze(opt){
   var ret;
   
   while(true){
+    opt.before(opt.id);
+    
     try{
-      current = opt.id;
       ret = pop(opt.it,opt.value,opt.error);
+      opt.after(opt.id);
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
-      current = null;
+      opt.after(opt.id);
       opt.yielded.error = e;
       if(opt.yd) opt.yd.consumed = true;
       return;
@@ -54,18 +55,23 @@ function onDone(e,opt){
   squeeze(opt);
 }
 
-module.exports = walk = function walk(Generator,args,thisArg,id){
+module.exports = walk = function walk(Generator,args,thisArg,control){
   var it,
       yd;
   
-  try{
-    current = id;
-    it = Generator.apply(thisArg || this,args || []);
-    current = null;
-  }catch(e){
-    current = null;
+  control = control || {};
+  control.after = control.after || c.NOOP;
+  control.before = control.before || c.NOOP;
+  
+  control.before(control.id);
+  
+  try{ it = Generator.apply(thisArg || this,args || []); }
+  catch(e){
+    control.after(control.id);
     return Yielded.reject(e);
   }
+  
+  control.after(control.id);
   
   if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
@@ -73,15 +79,14 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
   
   squeeze({ yielded: yd,
             it: it,
-            id: id
+            
+            before: control.before,
+            after: control.after,
+            id: control.id
           });
   
   return yd;
 };
-
-Object.defineProperty(walk,'current',{get: function(){
-  return current;
-}});
 
 walk.wrap = function(gen){
   return function(){
