@@ -91,7 +91,7 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
   
   squeeze({ yielded: yd,
             it: it,
-            stack: stack
+            stack: s
           });
   
   return yd;
