@@ -1,5 +1,5 @@
 var Yielded,
-    c = require('vz.constants'),
+    stack,
     walk;
 
 function pop(it,value,error){
@@ -16,20 +16,25 @@ function squeeze(opt){
   var ret;
   
   while(true){
-    opt.before(opt.id);
+    
+    stack = opt.stack;
     
     try{
       ret = pop(opt.it,opt.value,opt.error);
-      opt.after(opt.id);
+      stack = null;
+      
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
-      opt.after(opt.id);
-      opt.yielded.error = e;
+      stack = null;
+      opt.stack.pop();
+      
       if(opt.yd) opt.yd.consumed = true;
+      opt.yielded.error = e;
       return;
     }
     
     if(ret.done){
+      opt.stack.pop();
       opt.yielded.value = ret.value;
       return;
     }
@@ -55,37 +60,41 @@ function onDone(e,opt){
   squeeze(opt);
 }
 
-module.exports = walk = function walk(Generator,args,thisArg,control){
+module.exports = walk = function walk(Generator,args,thisArg,id){
   var it,
-      yd;
+      yd,
+      s;
   
-  control = control || {};
-  control.after = control.after || c.NOOP;
-  control.before = control.before || c.NOOP;
+  s = stack || [];
+  s.push(id);
   
-  control.before(control.id);
-  
+  stack = s;
   try{ it = Generator.apply(thisArg || this,args || []); }
   catch(e){
-    control.after(control.id);
+    s.pop();
+    stack = null;
     return Yielded.reject(e);
   }
   
-  control.after(control.id);
-  
-  if(!(it && it.next && it.throw)) return Yielded.accept(it);
+  if(!(it && it.next && it.throw)){
+    s.pop();
+    stack = null;
+    return Yielded.accept(it);
+  }
   
   yd = new Yielded();
   
   squeeze({ yielded: yd,
             it: it,
-            
-            before: control.before,
-            after: control.after,
-            id: control.id
+            stack: stack
           });
   
   return yd;
+};
+
+walk.getStack = function(){
+  if(!stack) return [];
+  return stack.slice();
 };
 
 walk.wrap = function(gen){
