@@ -1,6 +1,6 @@
 {
   "name": "vz.walk",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Walks a Generator following the iterator protocol",
   "main": "main.js",
   "dependencies": {
