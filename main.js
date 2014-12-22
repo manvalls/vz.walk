@@ -75,14 +75,15 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
   
   try{ it = Generator.apply(thisArg || this,args || []); }
   catch(e){
-    s.pop();
     stack = ps;
+    s.pop();
     return Yielded.reject(e);
   }
   
+  stack = ps;
+  
   if(!(it && it.next && it.throw)){
     s.pop();
-    stack = ps;
     return Yielded.accept(it);
   }
   
