@@ -13,19 +13,20 @@ function pop(it,value,error){
 }
 
 function squeeze(opt){
-  var ret;
+  var ret,ps;
   
   while(true){
     
+    ps = stack;
     stack = opt.stack;
     
     try{
       ret = pop(opt.it,opt.value,opt.error);
-      stack = null;
+      stack = ps;
       
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
-      stack = null;
+      stack = ps;
       opt.stack.pop();
       
       if(opt.yd) opt.yd.consumed = true;
@@ -63,22 +64,25 @@ function onDone(e,opt){
 module.exports = walk = function walk(Generator,args,thisArg,id){
   var it,
       yd,
+      ps,
       s;
   
   s = stack || [];
   s.push(id);
   
+  ps = stack;
   stack = s;
+  
   try{ it = Generator.apply(thisArg || this,args || []); }
   catch(e){
     s.pop();
-    stack = null;
+    stack = ps;
     return Yielded.reject(e);
   }
   
   if(!(it && it.next && it.throw)){
     s.pop();
-    stack = null;
+    stack = ps;
     return Yielded.accept(it);
   }
   
