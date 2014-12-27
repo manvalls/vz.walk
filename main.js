@@ -19,7 +19,6 @@ function squeeze(opt){
   while(true){
     
     if(opt.trace){
-      opt.stack.push(opt.id);
       ps = stack;
       stack = opt.stack;
     }
@@ -27,18 +26,12 @@ function squeeze(opt){
     try{
       ret = pop(opt.it,opt.value,opt.error);
       
-      if(opt.trace){
-        stack = ps;
-        opt.stack.pop();
-      }
+      if(opt.trace) stack = ps;
       
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
       
-      if(opt.trace){
-        stack = ps;
-        opt.stack.pop();
-      }
+      if(opt.trace) stack = ps;
       
       if(opt.yd) opt.yd.consumed = true;
       opt.yielded.error = e;
@@ -79,28 +72,20 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
       t = trace;
   
   if(t){
-    s = stack || [];
-    
+    s = (stack || []).slice();
     s.push(id);
+    
     ps = stack;
     stack = s;
   }
   
   try{ it = Generator.apply(thisArg || this,args || []); }
   catch(e){
-    
-    if(t){
-      stack = ps;
-      s.pop();
-    }
-    
+    if(t) stack = ps;
     return Yielded.reject(e);
   }
   
-  if(t){
-    stack = ps;
-    s.pop();
-  }
+  if(t) stack = ps;
   
   if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
@@ -110,7 +95,6 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
             yielded: yd,
             it: it,
             stack: s,
-            id: id,
             trace: t
           });
   
