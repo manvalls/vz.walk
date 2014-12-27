@@ -17,12 +17,15 @@ function squeeze(opt){
   
   while(true){
     
+    opt.stack.push(opt.id);
     ps = stack;
     stack = opt.stack;
     
     try{
       ret = pop(opt.it,opt.value,opt.error);
+      
       stack = ps;
+      opt.stack.pop();
       
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
@@ -35,7 +38,6 @@ function squeeze(opt){
     }
     
     if(ret.done){
-      opt.stack.pop();
       opt.yielded.mimic(Yielded.get(ret.value));
       return;
     }
@@ -68,8 +70,8 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
       s;
   
   s = stack || [];
-  s.push(id);
   
+  s.push(id);
   ps = stack;
   stack = s;
   
@@ -81,17 +83,16 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
   }
   
   stack = ps;
+  s.pop();
   
-  if(!(it && it.next && it.throw)){
-    s.pop();
-    return Yielded.accept(it);
-  }
+  if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
   yd = new Yielded();
   
   squeeze({ yielded: yd,
             it: it,
-            stack: s
+            stack: s,
+            id: id
           });
   
   return yd;
