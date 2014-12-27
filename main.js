@@ -36,7 +36,7 @@ function squeeze(opt){
     
     if(ret.done){
       opt.stack.pop();
-      opt.yielded.value = ret.value;
+      opt.yielded.mimic(Yielded.get(ret.value));
       return;
     }
     
