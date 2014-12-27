@@ -39,7 +39,7 @@ function squeeze(opt){
     }
     
     if(ret.done){
-      opt.yielded.mimic(Yielded.get(ret.value));
+      opt.yielded.value = ret.value;
       return;
     }
     
