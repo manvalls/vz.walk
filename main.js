@@ -1,5 +1,6 @@
 var Yielded,
     stack,
+    trace = false,
     walk;
 
 function pop(it,value,error){
@@ -17,20 +18,27 @@ function squeeze(opt){
   
   while(true){
     
-    opt.stack.push(opt.id);
-    ps = stack;
-    stack = opt.stack;
+    if(opt.trace){
+      opt.stack.push(opt.id);
+      ps = stack;
+      stack = opt.stack;
+    }
     
     try{
       ret = pop(opt.it,opt.value,opt.error);
       
-      stack = ps;
-      opt.stack.pop();
+      if(opt.trace){
+        stack = ps;
+        opt.stack.pop();
+      }
       
       if(opt.yd) opt.yd.consumed = true;
     }catch(e){
-      stack = ps;
-      opt.stack.pop();
+      
+      if(opt.trace){
+        stack = ps;
+        opt.stack.pop();
+      }
       
       if(opt.yd) opt.yd.consumed = true;
       opt.yielded.error = e;
@@ -67,32 +75,43 @@ module.exports = walk = function walk(Generator,args,thisArg,id){
   var it,
       yd,
       ps,
-      s;
+      s,
+      t = trace;
   
-  s = stack || [];
-  
-  s.push(id);
-  ps = stack;
-  stack = s;
+  if(t){
+    s = stack || [];
+    
+    s.push(id);
+    ps = stack;
+    stack = s;
+  }
   
   try{ it = Generator.apply(thisArg || this,args || []); }
   catch(e){
-    stack = ps;
-    s.pop();
+    
+    if(t){
+      stack = ps;
+      s.pop();
+    }
+    
     return Yielded.reject(e);
   }
   
-  stack = ps;
-  s.pop();
+  if(t){
+    stack = ps;
+    s.pop();
+  }
   
   if(!(it && it.next && it.throw)) return Yielded.accept(it);
   
   yd = new Yielded();
   
-  squeeze({ yielded: yd,
+  squeeze({
+            yielded: yd,
             it: it,
             stack: s,
-            id: id
+            id: id,
+            trace: t
           });
   
   return yd;
@@ -107,6 +126,10 @@ walk.wrap = function(gen){
   return function(){
     return walk(gen,arguments,this);
   };
+};
+
+walk.trace = function(){
+  trace = true;
 };
 
 Yielded = require('vz.yielded');
