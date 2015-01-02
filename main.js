@@ -27,13 +27,13 @@ function squeeze(opt){
       ret = pop(opt.it,opt.value,opt.error);
       
       if(opt.trace) stack = ps;
-      
       if(opt.yd) opt.yd.consumed = true;
+      
     }catch(e){
       
       if(opt.trace) stack = ps;
-      
       if(opt.yd) opt.yd.consumed = true;
+      
       opt.yielded.error = e;
       return;
     }
