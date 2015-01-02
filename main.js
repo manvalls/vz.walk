@@ -24,6 +24,7 @@ function squeeze(opt){
     }
     
     try{
+      
       ret = pop(opt.it,opt.value,opt.error);
       
       if(opt.trace) stack = ps;
@@ -36,6 +37,7 @@ function squeeze(opt){
       
       opt.yielded.error = e;
       return;
+      
     }
     
     if(ret.done){
