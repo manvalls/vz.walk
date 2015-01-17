@@ -1,5 +1,7 @@
 # vz walk
 
+**DEPRECATED in favour of [y-walk](https://www.npmjs.org/package/y-walk "y-walk")**
+
 ## Sample usage:
 
 ```javascript
